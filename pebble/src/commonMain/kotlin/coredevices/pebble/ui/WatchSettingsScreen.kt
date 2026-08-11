@@ -5,7 +5,6 @@ import CommonRoutes
 import CoreAppVersion
 import NextBugReportContext
 import PlatformUiContext
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -178,7 +177,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import theme.CoreAppTheme
 import theme.ThemeProvider
-import theme.currentColorScheme
 import kotlin.math.roundToLong
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -1602,20 +1600,9 @@ fun rememberSettingsItemsState(navBarNav: NavBarNav?, snackbarDisplay: SnackbarD
                     section = Section.Speech,
                     keywords = "",
                     item = {
-                        val logo = if (currentColorScheme().isDark) {
-                            Res.drawable.wispr_flow_logo_white
-                        } else {
-                            Res.drawable.wispr_flow_logo_black
-                        }
                         ListItem(
                             headlineContent = { Text("Cloud Recognition Provider") },
-                            trailingContent = {
-                                Image(
-                                    painter = painterResource(logo),
-                                    contentDescription = "Wispr Flow",
-                                    modifier = Modifier.height(20.dp),
-                                )
-                            },
+                            trailingContent = { Text("OpenAI") },
                             shadowElevation = ELEVATION,
                         )
                     }

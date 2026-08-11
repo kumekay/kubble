@@ -592,7 +592,7 @@ class RingRecordingE2ETest {
         }
         single { ModelDownloadManager(context) }
         single {
-            HybridTranscriptionService(get(), get(), get(), get(), get(), PlatformSpeechRecognizer(), get())
+            HybridTranscriptionService(get(), get(), get<WisprFlowRESTTranscriptionService>(), get(), get(), PlatformSpeechRecognizer(), get())
         } binds arrayOf(TranscriptionService::class, LocalTranscriptionService::class)
 
         // MCP tools
