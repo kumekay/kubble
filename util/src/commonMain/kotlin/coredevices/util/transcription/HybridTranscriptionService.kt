@@ -26,13 +26,13 @@ import kotlin.time.Instant
 
 /**
  * Mode-aware [TranscriptionService] that routes between the local Cactus model
- * ([CactusTranscriptionService]) and the remote backends (WisprFlow with Kirinki as backup),
+ * ([CactusTranscriptionService]) and the remote backends (OpenAI with Kirinki as backup),
  * and owns the fallback behaviour for the [CactusSTTMode] options.
  */
 class HybridTranscriptionService(
     private val coreConfigFlow: CoreConfigFlow,
     private val cactus: CactusTranscriptionService,
-    private val wisprFlow: WisprFlowRESTTranscriptionService,
+    private val openai: TranscriptionService,
     private val kirinki: KirinkiTranscriptionService,
     private val analytics: CoreAnalytics,
     private val platform: PlatformSpeechRecognizer,
@@ -70,13 +70,13 @@ class HybridTranscriptionService(
 
     override suspend fun isAvailable(): Boolean {
         return when (configuredMode) {
-            CactusSTTMode.RemoteOnly -> wisprFlow.isAvailable() || kirinki.isAvailable()
+            CactusSTTMode.RemoteOnly -> openai.isAvailable() || kirinki.isAvailable()
             CactusSTTMode.LocalOnly -> cactus.isLocalAvailable()
             CactusSTTMode.RemoteFirst, CactusSTTMode.LocalFirst ->
-                wisprFlow.isAvailable() || kirinki.isAvailable() || cactus.isModelReady
+                openai.isAvailable() || kirinki.isAvailable() || cactus.isModelReady
             CactusSTTMode.PlatformOnly ->
                 (platform.isAvailable() && platform.isAuthorized()) ||
-                    wisprFlow.isAvailable() || kirinki.isAvailable()
+                    openai.isAvailable() || kirinki.isAvailable()
             // Rebble modes are dispatched by STTRouter and never reach this service.
             CactusSTTMode.RebbleOnly,
             CactusSTTMode.RebbleFirst,
@@ -91,7 +91,7 @@ class HybridTranscriptionService(
     )
 
     /**
-     * Run remote transcription via WisprFlow.
+     * Run remote transcription via OpenAI.
      *
      * When [willFallbackLocal] is false kirinki is used as a backup and timeouts are more lenient.
      */
@@ -127,22 +127,22 @@ class HybridTranscriptionService(
         // fallback is available we let the caller handle it by propagating the WisprFlow failure.
         val canUseKirinki = !willFallbackLocal && kirinki.isAvailable()
 
-        val skipWispr = lastErrorMutex.withLock {
-            // Don't skip wispr if local fallback, because cactus might still be running, we can't trust its cancellation right now due to bug
+        val skipOpenai = lastErrorMutex.withLock {
+            // Don't skip remote if local fallback, because cactus might still be running, we can't trust its cancellation right now due to bug
             ((Clock.System.now() - lastWisprError) < wisprSkipInterval && canUseKirinki) && !willFallbackLocal
         }
-        if (skipWispr) {
+        if (skipOpenai) {
             if (canUseKirinki) {
-                logger.w { "Skipping WisprFlow transcription due to recent error, using kirinki directly" }
+                logger.w { "Skipping OpenAI transcription due to recent error, using kirinki directly" }
                 return transcribeKirinki()
             }
-            logger.w { "Skipping WisprFlow transcription due to recent error, falling back to local" }
-            throw TranscriptionException.TranscriptionServiceUnavailable("wisprflow")
+            logger.w { "Skipping OpenAI transcription due to recent error, falling back to local" }
+            throw TranscriptionException.TranscriptionServiceUnavailable("openai")
         }
 
         return try {
             val res = withTimeout(initialTimeout) {
-                wisprFlow.transcribe(
+                openai.transcribe(
                     audioStreamFrames = flowOf(audio),
                     sampleRate = sampleRate,
                     language = language,
@@ -154,21 +154,21 @@ class HybridTranscriptionService(
             lastErrorMutex.withLock {
                 lastWisprError = Instant.DISTANT_PAST
             }
-            analytics.logTranscriptionSuccess("wisprflow")
+            analytics.logTranscriptionSuccess("openai")
             res
         } catch (e: Exception) {
             if (e !is TimeoutCancellationException && e is CancellationException) throw e
-            analytics.logTranscriptionFailure("wisprflow", transcriptionFailureReason(e), e.message)
+            analytics.logTranscriptionFailure("openai", transcriptionFailureReason(e), e.message)
             if (e is TranscriptionException.NoSpeechDetected) throw e // NoSpeechDetected is a valid result, not a failure of the service
             lastErrorMutex.withLock {
                 lastWisprError = Clock.System.now()
             }
 
             if (!canUseKirinki) {
-                logger.w(e) { "WisprFlow transcription failed, propagating to caller: ${e.message}" }
+                logger.w(e) { "OpenAI transcription failed, propagating to caller: ${e.message}" }
                 throw e
             }
-            logger.w(e) { "WisprFlow transcription failed, falling back to kirinki: ${e.message}" }
+            logger.w(e) { "OpenAI transcription failed, falling back to kirinki: ${e.message}" }
             transcribeKirinki()
         }
     }
