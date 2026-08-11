@@ -583,7 +583,7 @@ class RingRecordingE2ETest {
             CactusTranscriptionService(get(), get<CactusModelPathProvider>(), get(), NoOpInferenceBoost())
         }
         single {
-            HybridTranscriptionService(get(), get(), get(), get(), get(), PlatformSpeechRecognizer())
+            HybridTranscriptionService(get(), get(), get<WisprFlowRESTTranscriptionService>(), get(), get(), PlatformSpeechRecognizer())
         } bind TranscriptionService::class
 
         // MCP tools
