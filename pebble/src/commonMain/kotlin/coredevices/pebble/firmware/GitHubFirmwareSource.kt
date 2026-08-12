@@ -13,9 +13,9 @@ import io.ktor.serialization.kotlinx.json.json
 import io.rebble.libpebblecommon.connection.FirmwareUpdateCheckResult
 import io.rebble.libpebblecommon.services.FirmwareVersion
 import io.rebble.libpebblecommon.services.WatchInfo
-import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.time.Instant
 
 /**
  * Firmware source backed by the public coredevices/PebbleOS GitHub releases.
@@ -55,7 +55,6 @@ class GitHubFirmwareSource(
             assetUrlByName = response.assets.associate { it.name to it.browserDownloadUrl },
             hardware = watch.platform.revision,
             tag = response.tagName,
-            isRecovery = watch.runningFwVersion.isRecovery,
         )
         if (assetUrl == null) {
             logger.i { "No ${watch.platform.revision} firmware in release ${response.tagName}" }
@@ -64,21 +63,15 @@ class GitHubFirmwareSource(
             )
         }
 
-        val latestVersion = FirmwareVersion.from(
-            tag = response.tagName,
-            isRecovery = watch.runningFwVersion.isRecovery,
-            gitHash = "",
-            timestamp = runCatching { Instant.parse(response.publishedAt) }
-                .getOrDefault(Instant.DISTANT_PAST),
-            isDualSlot = false, // Resolved from the pbz manifest during install.
-            isSlot0 = false,
-        )
+        val latestVersion = releaseVersion(response.tagName)
         if (latestVersion == null) {
             logger.e { "Couldn't parse firmware version from tag ${response.tagName}" }
             return FirmwareUpdateCheckResult.UpdateCheckFailed("Couldn't parse version ${response.tagName}")
         }
 
-        return if (watch.runningFwVersion.isRecovery || latestVersion > watch.runningFwVersion) {
+        return if (watch.runningFwVersion.isRecovery ||
+            hasNewerSemanticVersion(latestVersion, watch.runningFwVersion)
+        ) {
             FirmwareUpdateCheckResult.FoundUpdate(
                 version = latestVersion,
                 url = assetUrl,
@@ -103,11 +96,27 @@ class GitHubFirmwareSource(
             assetUrlByName: Map<String, String>,
             hardware: String,
             tag: String,
-            isRecovery: Boolean,
         ): String? {
-            val kind = if (isRecovery) "recovery" else "normal"
-            val name = "${kind}_${hardware}_${tag}.pbz"
+            val name = "normal_${hardware}_${tag}.pbz"
             return if (name in assetNames) assetUrlByName[name] else null
+        }
+
+        internal fun releaseVersion(tag: String): FirmwareVersion? = FirmwareVersion.from(
+            tag = tag,
+            isRecovery = false,
+            gitHash = "",
+            timestamp = Instant.DISTANT_PAST,
+            isDualSlot = false,
+            isSlot0 = false,
+        )
+
+        internal fun hasNewerSemanticVersion(
+            latest: FirmwareVersion,
+            installed: FirmwareVersion,
+        ): Boolean = when {
+            latest.major != installed.major -> latest.major > installed.major
+            latest.minor != installed.minor -> latest.minor > installed.minor
+            else -> latest.patch > installed.patch
         }
     }
 }
@@ -116,8 +125,6 @@ class GitHubFirmwareSource(
 private data class GitHubRelease(
     @kotlinx.serialization.SerialName("tag_name")
     val tagName: String,
-    @kotlinx.serialization.SerialName("published_at")
-    val publishedAt: String = "",
     val body: String? = null,
     val assets: List<GitHubReleaseAsset> = emptyList(),
 )

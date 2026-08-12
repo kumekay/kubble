@@ -1,8 +1,11 @@
 package coredevices.pebble.firmware
 
+import io.rebble.libpebblecommon.services.FirmwareVersion
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.time.Instant
 
 class GitHubFirmwareSourceTest {
 
@@ -21,19 +24,19 @@ class GitHubFirmwareSourceTest {
     fun selectsFullNormalPbzForHardware() {
         assertEquals(
             "https://example.com/normal_obelix_dvt_v4.33.1.pbz",
-            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v4.33.1", isRecovery = false),
+            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v4.33.1"),
         )
         assertEquals(
             "https://example.com/normal_obelix_pvt_v4.33.1.pbz",
-            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_pvt", "v4.33.1", isRecovery = false),
+            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_pvt", "v4.33.1"),
         )
     }
 
     @Test
-    fun selectsRecoveryPbzWhenRunningRecovery() {
+    fun selectsNormalPbzForRecoveryRestore() {
         assertEquals(
-            "https://example.com/recovery_obelix_dvt_v4.33.1.pbz",
-            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v4.33.1", isRecovery = true),
+            "https://example.com/normal_obelix_dvt_v4.33.1.pbz",
+            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v4.33.1"),
         )
     }
 
@@ -48,7 +51,6 @@ class GitHubFirmwareSourceTest {
                 onlySlotAssets.associateWith { it },
                 "obelix_dvt",
                 "v4.33.1",
-                isRecovery = false,
             )
         )
     }
@@ -56,14 +58,37 @@ class GitHubFirmwareSourceTest {
     @Test
     fun returnsNullWhenHardwareNotInRelease() {
         assertNull(
-            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_bb", "v4.33.1", isRecovery = false)
+            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_bb", "v4.33.1")
         )
     }
 
     @Test
     fun returnsNullWhenTagDoesNotMatch() {
         assertNull(
-            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v9.9.9", isRecovery = false)
+            GitHubFirmwareSource.selectAsset(assets, urls, "obelix_dvt", "v9.9.9")
         )
     }
+
+    @Test
+    fun equalVersionTagsAreNotNewerDespiteDifferentTimestamps() {
+        val released = GitHubFirmwareSource.releaseVersion("v4.33.1")!!
+        val installed = firmwareVersion("v4.33.1", Instant.fromEpochSeconds(1_700_000_000))
+
+        assertFalse(GitHubFirmwareSource.hasNewerSemanticVersion(released, installed))
+    }
+
+    @Test
+    fun releaseVersionIsNormalFirmware() {
+        assertFalse(GitHubFirmwareSource.releaseVersion("v4.33.1")!!.isRecovery)
+    }
+
+    private fun firmwareVersion(tag: String, timestamp: Instant) =
+        FirmwareVersion.from(
+            tag = tag,
+            isRecovery = false,
+            gitHash = "",
+            timestamp = timestamp,
+            isDualSlot = false,
+            isSlot0 = false,
+        )!!
 }
