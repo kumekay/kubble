@@ -19,6 +19,7 @@ import kotlin.time.Instant
 class FirmwareUpdateCheck(
     private val memfault: Memfault,
     private val engDashOta: EngDashOta,
+    private val github: GitHubFirmwareSource,
     private val cohorts: Cohorts,
     private val coreConfig: CoreConfigFlow,
     private val clock: Clock = Clock.System,
@@ -88,7 +89,15 @@ class FirmwareUpdateCheck(
         return if (CommonBuildKonfig.MEMFAULT_TOKEN != null) {
             memfault.getLatestFirmware(watch)
         } else {
-            cohorts.getLatestFirmware(watch)
+            // No Memfault token (self-built fork): try the public GitHub releases before
+            // falling back to Rebble cohorts, which has no entries for Core devices.
+            val githubResult = github.getLatestFirmware(watch)
+            if (githubResult !is FirmwareUpdateCheckResult.UpdateCheckFailed) {
+                githubResult
+            } else {
+                logger.w { "GitHub firmware check failed (${githubResult.error}); falling back" }
+                cohorts.getLatestFirmware(watch)
+            }
         }
     }
 
