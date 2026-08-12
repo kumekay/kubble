@@ -18,6 +18,7 @@ import coredevices.pebble.account.RealPebbleAccount
 import coredevices.pebble.firmware.BatteryChargedNotifier
 import coredevices.pebble.firmware.Cohorts
 import coredevices.pebble.firmware.FirmwareUpdateCheck
+import coredevices.pebble.firmware.GitHubFirmwareSource
 import coredevices.pebble.firmware.FirmwareUpdateUiTracker
 import coredevices.pebble.firmware.RealBatteryChargedNotifier
 import coredevices.pebble.firmware.RealFirmwareUpdateUiTracker
@@ -195,6 +196,7 @@ val watchModule = module {
     singleOf(::AnalyticsHeartbeatQueue)
     singleOf(::ContactDeveloperApi)
     factoryOf(::Cohorts)
+    factoryOf(::GitHubFirmwareSource)
     singleOf(::FirmwareUpdateCheck)
     factoryOf(::PebbleFeatures)
     factoryOf(::WeatherFetcher)
