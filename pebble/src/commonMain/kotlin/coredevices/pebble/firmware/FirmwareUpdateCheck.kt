@@ -1,6 +1,7 @@
 package coredevices.pebble.firmware
 
 import co.touchlab.kermit.Logger
+import coredevices.util.CommonBuildKonfig
 import coredevices.analytics.CoreAnalytics
 import coredevices.pebble.services.EngDashOta
 import coredevices.pebble.services.Memfault
@@ -42,6 +43,7 @@ import kotlin.time.Instant
 class FirmwareUpdateCheck(
     private val memfault: Memfault,
     private val engDashOta: EngDashOta,
+    private val github: GitHubFirmwareSource,
     private val cohorts: Cohorts,
     private val coreConfig: CoreConfigFlow,
     private val coreAnalytics: CoreAnalytics,
@@ -97,8 +99,26 @@ class FirmwareUpdateCheck(
 
     private suspend fun doCheck(watch: WatchInfo): FirmwareUpdateCheckResult = when {
         watch.platform == UNKNOWN -> FirmwareUpdateCheckResult.UpdateCheckFailed("Unknown platform")
-        watch.platform.isCoreDevice() -> engDashOta.getLatestFirmware(watch)
+        watch.platform.isCoreDevice() -> coreDeviceCheck(watch)
         else -> cohorts.getLatestFirmware(watch)
+    }
+
+    private suspend fun coreDeviceCheck(watch: WatchInfo): FirmwareUpdateCheckResult {
+        if (!CommonBuildKonfig.BUG_URL.isNullOrBlank()) {
+            val result = engDashOta.getLatestFirmware(watch)
+            if (result !is FirmwareUpdateCheckResult.UpdateCheckFailed) {
+                return result
+            }
+            logger.w { "eng-dash OTA check failed (${result.error}); falling back" }
+            coreAnalytics.logEvent("core_ota_failed")
+        }
+        val githubResult = github.getLatestFirmware(watch)
+        return if (githubResult !is FirmwareUpdateCheckResult.UpdateCheckFailed) {
+            githubResult
+        } else {
+            logger.w { "GitHub firmware check failed (${githubResult.error}); falling back" }
+            cohorts.getLatestFirmware(watch)
+        }
     }
 
     companion object {
