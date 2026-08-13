@@ -22,6 +22,7 @@ import coredevices.database.UserConfigDao
 import coredevices.database.getCoreRoomDatabase
 import coredevices.firestore.UsersDao
 import coredevices.firestore.UsersDaoImpl
+import coredevices.heartbeat.BatteryStatStore
 import coredevices.util.AppResumed
 import coredevices.util.CoreConfig
 import coredevices.util.CoreConfigFlow
@@ -86,6 +87,8 @@ val utilModule = module {
     single { get<CoreDatabase>().heartsDao() }
     single { get<CoreDatabase>().memfaultChunkDao() }
     single { get<CoreDatabase>().analyticsHeartbeatDao() }
+    single { get<CoreDatabase>().batteryStatDao() }
+    singleOf(::BatteryStatStore)
     single { UserConfigDao { get() } }
     single { CoreConfigHolder(defaultValue = CoreConfig(), get(), get()) }
     single { CoreConfigFlow(get<CoreConfigHolder>().config) }
