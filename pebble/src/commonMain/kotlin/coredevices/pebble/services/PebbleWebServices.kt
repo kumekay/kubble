@@ -12,6 +12,7 @@ import coredevices.pebble.account.FirestoreLocker
 import coredevices.pebble.account.PebbleAccount
 import coredevices.pebble.account.UsersMeResponse
 import coredevices.pebble.account.compareVersionStrings
+import coredevices.heartbeat.BatteryStatStore
 import coredevices.pebble.firmware.FirmwareUpdateCheck
 import coredevices.pebble.services.Memfault.Companion.serialForMemfault
 import coredevices.pebble.services.PebbleHttpClient.Companion.delete
@@ -275,6 +276,7 @@ class RealPebbleWebServices(
     private val appstoreSourceDao: AppstoreSourceDao,
     private val firestoreLocker: FirestoreLocker,
     private val heartsDao: HeartsDao,
+    private val batteryStatStore: BatteryStatStore,
 ) : WebServices, PebbleWebServices, KoinComponent {
     private val scope = CoroutineScope(Dispatchers.Default)
 
@@ -372,6 +374,7 @@ class RealPebbleWebServices(
     }
 
     override fun uploadAnalyticsHeartbeat(payload: ByteArray, watchInfo: WatchInfo) {
+        batteryStatStore.record(watchInfo.serial, payload)
         analyticsHeartbeatQueue.enqueue(
             serial = watchInfo.serial,
             fwVersion = watchInfo.runningFwVersion.stringVersion,
