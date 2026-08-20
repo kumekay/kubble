@@ -63,11 +63,13 @@ class HeartbeatRecordTest {
             timestamp = 1_750_000_000L,
             scaled = mapOf(
                 "battery_soc_pct" to (8_750L to 100),
+                "battery_soc_pct_drop" to (125L to 100),
                 "battery_soc_pct_min" to (8_000L to 100),
                 "battery_voltage" to (4_123L to 1000),
                 "battery_voltage_delta" to (-50L to 1000),
                 "battery_temp_c" to (-500L to 1000),
                 "cpu_running_pct" to (12_50L to 100),
+                "task_cpu_app_pct" to (7_25L to 100),
             ),
             ints = mapOf(
                 "battery_tte_s" to 123_456L,
@@ -78,8 +80,15 @@ class HeartbeatRecordTest {
                 "vibrator_on_time_ms" to 1_500L,
                 "speaker_on_time_ms" to 2_500L,
                 "connectivity_connected_time_ms" to 3_000_000L,
+                "settings_health_tracking_enabled" to 1L,
+                "settings_health_hrm_enabled" to 1L,
+                "settings_health_hrm_measurement_interval" to 0L,
+                "settings_health_hrm_activity_tracking_enabled" to 1L,
             ),
-            strings = mapOf("fw_version" to "v4.5.0"),
+            strings = mapOf(
+                "fw_version" to "v4.5.0",
+                "watchface_name" to "TicToc",
+            ),
         )
 
         val rec = parseNativeHeartbeat(data)
@@ -88,6 +97,7 @@ class HeartbeatRecordTest {
         assertEquals(Instant.fromEpochSeconds(1_750_000_000L), rec.timestamp)
         assertEquals("v4.5.0", rec.fwVersion)
         assertEquals(87.5, rec.batterySocPct)
+        assertEquals(1.25, rec.batterySocPctDrop)
         assertEquals(80.0, rec.batterySocPctMin)
         assertEquals(4.123, rec.batteryVoltageV)
         assertEquals(-0.05, rec.batteryVoltageDeltaV)
@@ -96,6 +106,12 @@ class HeartbeatRecordTest {
         assertEquals(7_200_000L, rec.batteryDischargeTimeMs)
         assertEquals(-0.5, rec.batteryTempC)
         assertEquals(12.5, rec.cpuRunningPct)
+        assertEquals(7.25, rec.appCpuPct)
+        assertEquals("TicToc", rec.watchfaceName)
+        assertEquals(true, rec.healthTrackingEnabled)
+        assertEquals(true, rec.healthHrmEnabled)
+        assertEquals(0, rec.healthHrmMeasurementInterval)
+        assertEquals(true, rec.healthHrmActivityTrackingEnabled)
         assertEquals(60_000L, rec.backlightOnTimeMs)
         assertEquals(120_000L, rec.hrmOnTimeMs)
         assertEquals(1_500L, rec.vibratorOnTimeMs)

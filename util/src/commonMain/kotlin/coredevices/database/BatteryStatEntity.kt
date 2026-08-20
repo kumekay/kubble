@@ -13,6 +13,7 @@ data class BatteryStatEntity(
     // epoch seconds, from the heartbeat record
     val timestamp: Long,
     val socPct: Double?,
+    val socPctDrop: Double?,
     val socPctMin: Double?,
     val voltageV: Double?,
     val tteSeconds: Long?,
@@ -25,6 +26,12 @@ data class BatteryStatEntity(
     val speakerMs: Long?,
     val bleConnectedMs: Long?,
     val cpuRunningPct: Double?,
+    val appCpuPct: Double?,
+    val watchfaceName: String?,
+    val healthTrackingEnabled: Boolean?,
+    val healthHrmEnabled: Boolean?,
+    val healthHrmMeasurementInterval: Int?,
+    val healthHrmActivityTrackingEnabled: Boolean?,
 )
 
 @Dao
@@ -34,6 +41,9 @@ interface BatteryStatDao {
 
     @Query("SELECT * FROM battery_stats WHERE serial = :serial ORDER BY timestamp ASC")
     fun observe(serial: String): Flow<List<BatteryStatEntity>>
+
+    @Query("SELECT DISTINCT serial FROM battery_stats ORDER BY serial")
+    fun observeSerials(): Flow<List<String>>
 
     @Query("DELETE FROM battery_stats WHERE timestamp < :cutoffEpochSeconds")
     suspend fun deleteOlderThan(cutoffEpochSeconds: Long)

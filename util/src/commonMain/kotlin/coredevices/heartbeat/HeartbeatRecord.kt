@@ -147,6 +147,7 @@ data class NativeHeartbeat(
     val timestamp: Instant,
     val fwVersion: String?,
     val batterySocPct: Double?,
+    val batterySocPctDrop: Double?,
     val batterySocPctMin: Double?,
     val batteryVoltageV: Double?,
     val batteryVoltageDeltaV: Double?,
@@ -161,6 +162,12 @@ data class NativeHeartbeat(
     val speakerOnTimeMs: Long?,
     val bleConnectedTimeMs: Long?,
     val cpuRunningPct: Double?,
+    val appCpuPct: Double?,
+    val watchfaceName: String?,
+    val healthTrackingEnabled: Boolean?,
+    val healthHrmEnabled: Boolean?,
+    val healthHrmMeasurementInterval: Int?,
+    val healthHrmActivityTrackingEnabled: Boolean?,
 )
 
 fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
@@ -171,6 +178,7 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
 
     var fwVersion: String? = null
     var socPct: Double? = null
+    var socPctDrop: Double? = null
     var socPctMin: Double? = null
     var voltageV: Double? = null
     var voltageDeltaV: Double? = null
@@ -184,6 +192,12 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
     var speakerMs: Long? = null
     var bleConnectedMs: Long? = null
     var cpuRunningPct: Double? = null
+    var appCpuPct: Double? = null
+    var watchfaceName: String? = null
+    var healthTrackingEnabled: Boolean? = null
+    var healthHrmEnabled: Boolean? = null
+    var healthHrmMeasurementInterval: Int? = null
+    var healthHrmActivityTrackingEnabled: Boolean? = null
 
     var o = HEADER_SIZE
     for (field in HEARTBEAT_V3_FIELDS) {
@@ -191,6 +205,7 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
         when (field.name) {
             "fw_version" -> fwVersion = data.cString(o, field.len)
             "battery_soc_pct" -> socPct = data.scaledU(o)
+            "battery_soc_pct_drop" -> socPctDrop = data.scaledU(o)
             "battery_soc_pct_min" -> socPctMin = data.scaledU(o)
             "battery_voltage" -> voltageV = data.scaledU(o)
             "battery_voltage_delta" -> voltageDeltaV = data.scaledI(o)
@@ -204,6 +219,13 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
             "speaker_on_time_ms" -> speakerMs = data.u32Le(o)
             "connectivity_connected_time_ms" -> bleConnectedMs = data.u32Le(o)
             "cpu_running_pct" -> cpuRunningPct = data.scaledU(o)
+            "task_cpu_app_pct" -> appCpuPct = data.scaledU(o)
+            "watchface_name" -> watchfaceName = data.cString(o, field.len).ifBlank { null }
+            "settings_health_tracking_enabled" -> healthTrackingEnabled = data.u32Le(o) != 0L
+            "settings_health_hrm_enabled" -> healthHrmEnabled = data.u32Le(o) != 0L
+            "settings_health_hrm_measurement_interval" -> healthHrmMeasurementInterval = data.u32Le(o).toInt()
+            "settings_health_hrm_activity_tracking_enabled" -> healthHrmActivityTrackingEnabled =
+                data.u32Le(o) != 0L
         }
         o += field.size
     }
@@ -212,6 +234,7 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
         timestamp = Instant.fromEpochSeconds(timestamp),
         fwVersion = fwVersion,
         batterySocPct = socPct,
+        batterySocPctDrop = socPctDrop,
         batterySocPctMin = socPctMin,
         batteryVoltageV = voltageV,
         batteryVoltageDeltaV = voltageDeltaV,
@@ -225,6 +248,12 @@ fun parseNativeHeartbeat(data: ByteArray): NativeHeartbeat? {
         speakerOnTimeMs = speakerMs,
         bleConnectedTimeMs = bleConnectedMs,
         cpuRunningPct = cpuRunningPct,
+        appCpuPct = appCpuPct,
+        watchfaceName = watchfaceName,
+        healthTrackingEnabled = healthTrackingEnabled,
+        healthHrmEnabled = healthHrmEnabled,
+        healthHrmMeasurementInterval = healthHrmMeasurementInterval,
+        healthHrmActivityTrackingEnabled = healthHrmActivityTrackingEnabled,
     )
 }
 
