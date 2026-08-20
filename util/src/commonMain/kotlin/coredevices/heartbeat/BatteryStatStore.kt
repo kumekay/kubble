@@ -27,6 +27,7 @@ class BatteryStatStore(
             serial = serial,
             timestamp = heartbeat.timestamp.epochSeconds,
             socPct = heartbeat.batterySocPct,
+            socPctDrop = heartbeat.batterySocPctDrop,
             socPctMin = heartbeat.batterySocPctMin,
             voltageV = heartbeat.batteryVoltageV,
             tteSeconds = heartbeat.batteryTteSeconds,
@@ -39,6 +40,12 @@ class BatteryStatStore(
             speakerMs = heartbeat.speakerOnTimeMs,
             bleConnectedMs = heartbeat.bleConnectedTimeMs,
             cpuRunningPct = heartbeat.cpuRunningPct,
+            appCpuPct = heartbeat.appCpuPct,
+            watchfaceName = heartbeat.watchfaceName,
+            healthTrackingEnabled = heartbeat.healthTrackingEnabled,
+            healthHrmEnabled = heartbeat.healthHrmEnabled,
+            healthHrmMeasurementInterval = heartbeat.healthHrmMeasurementInterval,
+            healthHrmActivityTrackingEnabled = heartbeat.healthHrmActivityTrackingEnabled,
         )
         scope.launch {
             dao.insert(row)

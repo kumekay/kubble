@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 11,
-    "identityHash": "c1b4f5c04c3a1c94222b02f747ac8ae8",
+    "version": 12,
+    "identityHash": "29a40d9c8d427a07178d7886302cadc0",
     "entities": [
       {
         "tableName": "HeartbeatStateEntity",
@@ -345,7 +345,7 @@
       },
       {
         "tableName": "battery_stats",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`serial` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `socPct` REAL, `socPctMin` REAL, `voltageV` REAL, `tteSeconds` INTEGER, `chargeTimeMs` INTEGER, `dischargeTimeMs` INTEGER, `tempC` REAL, `backlightMs` INTEGER, `hrmMs` INTEGER, `vibratorMs` INTEGER, `speakerMs` INTEGER, `bleConnectedMs` INTEGER, `cpuRunningPct` REAL, PRIMARY KEY(`serial`, `timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`serial` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `socPct` REAL, `socPctDrop` REAL, `socPctMin` REAL, `voltageV` REAL, `tteSeconds` INTEGER, `chargeTimeMs` INTEGER, `dischargeTimeMs` INTEGER, `tempC` REAL, `backlightMs` INTEGER, `hrmMs` INTEGER, `vibratorMs` INTEGER, `speakerMs` INTEGER, `bleConnectedMs` INTEGER, `cpuRunningPct` REAL, `appCpuPct` REAL, `watchfaceName` TEXT, `healthTrackingEnabled` INTEGER, `healthHrmEnabled` INTEGER, `healthHrmMeasurementInterval` INTEGER, `healthHrmActivityTrackingEnabled` INTEGER, PRIMARY KEY(`serial`, `timestamp`))",
         "fields": [
           {
             "fieldPath": "serial",
@@ -362,6 +362,11 @@
           {
             "fieldPath": "socPct",
             "columnName": "socPct",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "socPctDrop",
+            "columnName": "socPctDrop",
             "affinity": "REAL"
           },
           {
@@ -423,6 +428,36 @@
             "fieldPath": "cpuRunningPct",
             "columnName": "cpuRunningPct",
             "affinity": "REAL"
+          },
+          {
+            "fieldPath": "appCpuPct",
+            "columnName": "appCpuPct",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "watchfaceName",
+            "columnName": "watchfaceName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "healthTrackingEnabled",
+            "columnName": "healthTrackingEnabled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "healthHrmEnabled",
+            "columnName": "healthHrmEnabled",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "healthHrmMeasurementInterval",
+            "columnName": "healthHrmMeasurementInterval",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "healthHrmActivityTrackingEnabled",
+            "columnName": "healthHrmActivityTrackingEnabled",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -436,7 +471,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c1b4f5c04c3a1c94222b02f747ac8ae8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '29a40d9c8d427a07178d7886302cadc0')"
     ]
   }
 }
