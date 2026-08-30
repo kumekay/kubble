@@ -15,9 +15,6 @@ val properties = Properties().apply {
 }
 val localReleaseBuild = properties["LOCAL_RELEASE_BUILD"]?.toString()?.toBooleanStrictOrNull() ?: false
 
-// Hoisted out of the lambda below, which must not capture the project.
-val providerFactory = providers
-
 // Most recent tag reachable from HEAD, so a release branch versions from its own tag.
 val gitReleaseTag = providers.exec {
     isIgnoreExitValue = true
@@ -33,25 +30,7 @@ val gitVersionCode = gitReleaseTag.map { name ->
     listOf(10_000_000, 100_000, 1_000, 1).zip(parts) { scale, part -> scale * part }.sum()
 }
 
-val upstreamRevision = providers.exec {
-    isIgnoreExitValue = true
-    commandLine("git", "merge-base", "HEAD", "upstream/master")
-}.standardOutput.asText.map { it.trim().ifEmpty { "HEAD" } }
-
-val upstreamCommitTimestamp = upstreamRevision.flatMap { revision ->
-    providerFactory.exec {
-        isIgnoreExitValue = true
-        environment("TZ", "UTC")
-        commandLine("git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%dT%H:%M:%SZ", revision)
-    }.standardOutput.asText
-}.map { it.trim() }
-
-val gitCommitId = providers.exec {
-    isIgnoreExitValue = true
-    commandLine("git", "rev-parse", "--short=8", "HEAD")
-}.standardOutput.asText.map { it.trim() }
-
-val gitVersionName = upstreamCommitTimestamp.zip(gitCommitId) { timestamp, commitId -> "$timestamp+$commitId" }
+val gitVersionName = gitReleaseTag
 
 android {
     namespace = "coredevices.coreapp"
