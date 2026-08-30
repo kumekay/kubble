@@ -30,7 +30,12 @@ val gitVersionCode = gitReleaseTag.map { name ->
     listOf(10_000_000, 100_000, 1_000, 1).zip(parts) { scale, part -> scale * part }.sum()
 }
 
-val gitVersionName = gitReleaseTag
+val gitCommitId = providers.exec {
+    isIgnoreExitValue = true
+    commandLine("git", "rev-parse", "--short=8", "HEAD")
+}.standardOutput.asText.map { it.trim() }
+
+val gitVersionName = gitReleaseTag.zip(gitCommitId) { tag, commitId -> "$tag+$commitId" }
 
 android {
     namespace = "coredevices.coreapp"
