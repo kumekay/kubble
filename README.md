@@ -44,7 +44,8 @@ Several features (e.g. bug reporting, google login, memfault, online transcripti
 
 ### Android
 * Compile on Android with `./gradlew :androidApp:assembleRelease`.
-* You will need a `google-services.json` in `androidApp/src` to compile on Android (an examples with dummy values is provided in `google-services-dummy.json`).
+* You will need a `google-services.json` in `androidApp/src` to compile on Android (an example with dummy values is provided in `google-services-dummy.json`).
+* For Google sign-in and a working watchapp locker in Kubble, follow [Android Firebase setup](docs/android-firebase.md). Personal Firebase configuration stays outside Git; CI continues to use the dummy configuration.
 * You will need a keystore with some keys if you intend to do a release build on Android (unless you use `LOCAL_RELEASE_BUILD=true` in `gradle.properties`).
 
 ### iOS
